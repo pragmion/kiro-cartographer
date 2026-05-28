@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "kiro-cartographer": {
+      "command": "node",
+      "args": ["dist/server.cjs"],
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "name": "kiro-cartographer",
+  "version": "1.0.0",
+  "description": "A Kiro Power that maps any codebase and generates steering files, skills, and architecture documentation — so Kiro works like a senior teammate from the first prompt.",
+  "type": "module",
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "bin": {
+    "kiro-cartographer": "dist/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "bundle": "node scripts/bundle.mjs",
+    "test": "vitest run",
+    "start": "node dist/server.js"
+  },
+  "keywords": [
+    "kiro",
+    "kiro-power",
+    "mcp",
+    "mcp-server",
+    "codebase-analysis",
+    "architecture",
+    "steering",
+    "skills",
+    "documentation",
+    "typescript"
+  ],
+  "author": {
+    "name": "Bruno Waßerer",
+    "url": "https://github.com/pragmion"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/pragmion/kiro-cartographer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pragmion/kiro-cartographer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pragmion/kiro-cartographer/issues"
+  },
+  "kiro": {
+    "power": {
+      "name": "Kiro Cartographer",
+      "displayName": "🗺️ Kiro Cartographer",
+      "description": "Maps any codebase and generates steering files, skills, and architecture documentation. Run it once on a new project and Kiro immediately knows your conventions, patterns, and architecture.",
+      "icon": "🗺️",
+      "tools": [
+        "analyze_codebase",
+        "generate_artifacts",
+        "configure_profile",
+        "record_feedback"
+      ],
+      "documentation": "POWER.md"
+    }
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@pragmion/kiro-learning": "github:pragmion/kiro-learning",
+    "yaml": "^2.7.1",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "esbuild": "^0.28.0",
+    "fast-check": "^4.1.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}

@@ -1,0 +1,156 @@
+---
+name: "kiro-cartographer"
+displayName: "🗺️ Kiro Cartographer"
+description: "Map any codebase and generate steering files, skills, and architecture documentation. Run it once on a new project and Kiro immediately knows your conventions, patterns, and architecture."
+keywords:
+  - "codebase"
+  - "analyze"
+  - "architecture"
+  - "patterns"
+  - "steering"
+  - "skills"
+  - "documentation"
+  - "onboarding"
+  - "cartographer"
+  - "mvc"
+  - "hexagonal"
+  - "layered"
+author: "Bruno Waßerer (pragmion)"
+version: "1.0.0"
+icon: "🗺️"
+homepage: "https://github.com/pragmion/kiro-cartographer"
+license: "MIT"
+---
+
+# Kiro Cartographer
+
+Maps any codebase and generates structured artifacts that teach Kiro your project's conventions, patterns, and architecture. After a single analysis Kiro can work competently with your project from the first prompt.
+
+## Onboarding
+
+### Step 1: Verify the server is reachable
+
+The Cartographer MCP server is automatically registered when you install this power. Confirm the four tools are available:
+
+- `analyze_codebase` — runs a full or incremental analysis
+- `generate_artifacts` — produces steering files, skills, and documentation
+- `configure_profile` — manages user/team/analysis profiles
+- `record_feedback` — feeds the self-improvement loop
+
+If the tools don't appear, restart Kiro so it can pick up the new MCP server entry.
+
+### Step 2: Run your first analysis
+
+In a Kiro session inside the project you want to map, ask:
+
+> "Analyze this codebase with kiro-cartographer."
+
+Kiro calls `analyze_codebase` on the project root and streams progress notifications. Save the result if you want to feed it into `generate_artifacts` later.
+
+### Step 3: Generate artifacts
+
+Once an analysis is available, ask:
+
+> "Generate steering files and skills from the cartographer analysis."
+
+Kiro invokes `generate_artifacts`, which produces:
+
+- `.kiro/steering/coding-standards.md`
+- `.kiro/steering/build-and-test.md`
+- `.kiro/steering/architecture.md`
+- `.kiro/skills/*.md`
+- `.kiro/docs/architecture.md`
+
+Each generated file carries a header so the Cartographer never overwrites manual edits — remove the header to "adopt" a file permanently.
+
+### Step 4: Optional — set up profiles
+
+Configure team conventions or your personal preferences:
+
+> "Use kiro-cartographer to init a team-conventions template."
+
+This calls `configure_profile` and writes a starter YAML file under `.cartographer/`.
+
+## When to Load Steering Files
+
+- Performing the very first analysis on a fresh project → `perform-first-analysis.md`
+- Updating artifacts after code changes → `update-artifacts.md`
+
+## Tools Reference
+
+### `analyze_codebase`
+
+Runs the full analysis pipeline: structure → patterns → data models → APIs → error handling → state management → build pipeline.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `rootPath` | string | cwd | Project root |
+| `incremental` | boolean | `false` | Reuse last analysis state and only inspect changed files |
+| `focusAreas` | string[] | all | Drill deeper into selected areas: `api`, `data-model`, `state-management`, `security`, `error-handling`, `build-pipeline` |
+| `excludePaths` | string[] | `[]` | Extra paths to skip on top of the built-in exclusions |
+| `maxDepth` | number | `20` | Maximum directory traversal depth |
+
+### `generate_artifacts`
+
+Writes steering files, skills, and architecture docs from an analysis result.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `rootPath` | string | cwd | Project root |
+| `analysisResultPath` | string | — | Path to a saved analysis JSON |
+| `artifactTypes` | string[] | all | Subset of `steering`, `skills`, `documentation` |
+| `steeringCategories` | string[] | all | Subset of `build-commands`, `naming-conventions`, `formatting`, `import-order`, `architecture`, `test-commands` |
+| `conflictStrategy` | string | `"skip"` | `"ask"` or `"skip"` for existing files |
+
+### `configure_profile`
+
+Validates, shows, or initializes profiles.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `action` | string | `validate`, `show`, or `init` |
+| `profileType` | string | `user`, `team`, or `analysis` |
+| `rootPath` | string | Project root (default: cwd) |
+
+### `record_feedback`
+
+Feeds the self-improvement loop. Call this when:
+- A user corrects Kiro after using a generated skill (`type: "skill-correction"`)
+- Kiro generates code that violates a steering file (`type: "convention-violation"`)
+- An artifact is loaded by Kiro (`type: "artifact-usage"`)
+- A recurring code pattern is detected (`type: "pattern"`)
+
+## Configuration Layers
+
+Highest priority first:
+
+1. **Team conventions** — `.cartographer/team-conventions.yaml` (project)
+2. **User profile** — `~/.cartographer/user-profile.yaml` (global) or `.cartographer/user-profile.yaml` (project fallback)
+3. **Built-in defaults**
+
+## Artifact Safety
+
+Generated files are tracked in `.kiro/.generated-manifest.json` and start with:
+
+```markdown
+<!-- Generated by Kiro Cartographer v1.0.0 | Do not edit manually -->
+```
+
+- Files with the header get refreshed on every `generate_artifacts`.
+- Remove the header to mark a file as manually adopted — Cartographer will never touch it again.
+- Files outside the manifest with no header are treated as fully manual and are never written.
+
+## Self-Improvement
+
+Powered by [`@pragmion/kiro-learning`](https://github.com/pragmion/kiro-learning):
+
+- Skill corrections accumulate; after several corrections to the same skill, the skill description is refined on the next generation.
+- Artifact usage is tracked per day; unused steering files are flagged.
+- Recurring code patterns with ≥3 occurrences become skill candidates.
+- Repeated convention violations enrich the relevant steering file with explicit examples.
+
+All learning state is stored locally in `.cartographer/learning-state.json`. Nothing leaves your machine.
+
+## License
+
+MIT — Bruno Waßerer (pragmion)

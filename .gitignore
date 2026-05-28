@@ -1,0 +1,15 @@
+node_modules/
+coverage/
+*.tsbuildinfo
+.DS_Store
+
+# Internal working files (specs, hooks, settings)
+.kiro/
+
+# Cartographer state files (per-project, not source code)
+.cartographer/
+.codebase-explorer/
+
+# Build output: ignore everything in dist/ except the bundled server
+dist/*
+!dist/server.cjs
