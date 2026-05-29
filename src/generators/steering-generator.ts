@@ -6,6 +6,7 @@ import type {
   BuildPipelineAnalysis,
   ArchitecturePatterns,
   TeamConventions,
+  ConventionAnalysis,
 } from '../types.js';
 import type { ArtifactGenerator, GenerationConfig } from './base-generator.js';
 
@@ -24,93 +25,113 @@ function determineInclusionMode(confidence: 'high' | 'medium' | 'low'): 'auto' |
 
 /**
  * Generates the Coding-Standards steering file content.
+ * Uses detected conventions from source analysis when available,
+ * falls back to team conventions config, then to defaults.
  */
 function generateCodingStandards(
   teamConventions: TeamConventions,
   analysis: AnalyzeCodebaseOutput,
 ): { content: string; confidence: 'high' | 'medium' | 'low' } | null {
   const sections: string[] = [];
-  let hasData = false;
-  let confidence: 'high' | 'medium' | 'low' = 'high';
+  const conventions = analysis.conventions;
+  let overallConfidence: 'high' | 'medium' | 'low' = 'medium';
 
-  // Naming Conventions
+  // ─── Naming Conventions ─────────────────────────────────────────────────
+  const fileNaming = conventions?.naming.files;
   const naming = teamConventions.naming;
-  if (naming && (naming.files || naming.variables || naming.classes || naming.constants)) {
-    hasData = true;
+
+  const filesConvention = fileNaming?.value ?? naming?.files;
+  const variablesConvention = naming?.variables ?? 'camelCase';
+  const classesConvention = naming?.classes ?? 'PascalCase';
+  const constantsConvention = naming?.constants ?? 'UPPER_SNAKE_CASE';
+
+  if (filesConvention) {
     sections.push('## Naming Conventions\n');
-    if (naming.files) sections.push(`- **Files**: ${naming.files}`);
-    if (naming.variables) sections.push(`- **Variables**: ${naming.variables}`);
-    if (naming.classes) sections.push(`- **Classes**: ${naming.classes}`);
-    if (naming.constants) sections.push(`- **Constants**: ${naming.constants}`);
+    sections.push(`- **Files**: ${filesConvention}`);
+    sections.push(`- **Variables**: ${variablesConvention}`);
+    sections.push(`- **Classes**: ${classesConvention}`);
+    sections.push(`- **Constants**: ${constantsConvention}`);
     sections.push('');
-  }
 
-  // Formatting
-  const formatting = teamConventions.formatting;
-  if (formatting && (formatting.indentation || formatting.maxLineLength || formatting.semicolons !== undefined)) {
-    hasData = true;
-    sections.push('## Formatting\n');
-    if (formatting.indentation) {
-      const indent = formatting.indentation === 'spaces'
-        ? `${formatting.indentSize ?? 2} spaces`
-        : 'tabs';
-      sections.push(`- **Indentation**: ${indent}`);
-    }
-    if (formatting.maxLineLength) sections.push(`- **Max line length**: ${formatting.maxLineLength}`);
-    if (formatting.trailingComma !== undefined) sections.push(`- **Trailing comma**: ${formatting.trailingComma ? 'yes' : 'no'}`);
-    if (formatting.semicolons !== undefined) sections.push(`- **Semicolons**: ${formatting.semicolons ? 'required' : 'omitted'}`);
-    sections.push('');
-  }
-
-  // Import Order
-  const imports = teamConventions.imports;
-  if (imports && imports.order && imports.order.length > 0) {
-    hasData = true;
-    sections.push('## Import Order\n');
-    imports.order.forEach((group, index) => {
-      sections.push(`${index + 1}. ${group}`);
-    });
-    if (imports.groupSeparator) {
-      sections.push('\nSeparate groups with a blank line.');
-    }
-    sections.push('');
-  }
-
-  // If no team conventions, try to infer from analysis patterns
-  if (!hasData) {
-    // Check if we have any detected patterns that hint at conventions
-    const patterns = analysis.patterns;
-    if (patterns.layers && patterns.layers.length > 0) {
-      // We have some structural info but no explicit conventions
-      confidence = 'low';
-      hasData = true;
-      sections.push('## Naming Conventions\n');
-      sections.push('- No explicit naming conventions detected. Review and adjust as needed.');
-      sections.push('');
-      sections.push('## Formatting\n');
-      sections.push('- No explicit formatting rules detected. Review and adjust as needed.');
-      sections.push('');
-      sections.push('## Import Order\n');
-      sections.push('- No explicit import order detected. Review and adjust as needed.');
-      sections.push('');
+    if (fileNaming && fileNaming.confidence === 'high') {
+      overallConfidence = 'high';
     }
   }
 
-  if (!hasData) {
-    return null;
+  // ─── Formatting ─────────────────────────────────────────────────────────
+  const fmt = conventions?.formatting;
+  const cfgFmt = teamConventions.formatting;
+
+  const indentType = fmt?.indentation.value ?? cfgFmt?.indentation ?? 'spaces';
+  const indentSize = fmt?.indentSize.value ?? cfgFmt?.indentSize ?? 2;
+  const semicolons = fmt?.semicolons.value ?? cfgFmt?.semicolons;
+  const trailingComma = fmt?.trailingComma.value ?? cfgFmt?.trailingComma;
+  const maxLineLength = fmt?.maxLineLength?.value ?? cfgFmt?.maxLineLength;
+
+  sections.push('## Formatting\n');
+  const indentLabel = indentType === 'spaces' ? `${indentSize} spaces` : 'tabs';
+  sections.push(`- **Indentation**: ${indentLabel}`);
+  if (maxLineLength) sections.push(`- **Max line length**: ${maxLineLength}`);
+  if (trailingComma !== undefined) sections.push(`- **Trailing comma**: ${trailingComma ? 'yes' : 'no'}`);
+  if (semicolons !== undefined) sections.push(`- **Semicolons**: ${semicolons ? 'required' : 'omitted'}`);
+  sections.push('');
+
+  if (fmt && (fmt.indentation.source === 'config-file' || fmt.semicolons.source === 'config-file')) {
+    overallConfidence = 'high';
+  } else if (fmt && fmt.indentation.confidence === 'high') {
+    overallConfidence = 'high';
   }
 
-  // If conventions come from explicit team config, confidence is high
-  // If inferred from analysis, confidence is lower
-  if (naming || formatting || imports) {
-    confidence = 'high';
+  // ─── Comment Style ──────────────────────────────────────────────────────
+  const commentStyle = conventions?.commentStyle;
+  if (commentStyle && commentStyle.value !== 'none' && commentStyle.confidence !== 'low') {
+    sections.push('## Comment Style\n');
+    switch (commentStyle.value) {
+      case 'jsdoc':
+        sections.push('- **Style**: JSDoc (`/** ... */`) on public functions and methods');
+        break;
+      case 'inline':
+        sections.push('- **Style**: Inline comments (`//`) above functions');
+        break;
+      case 'minimal':
+        sections.push('- **Style**: Minimal — comments only where non-obvious');
+        break;
+    }
+    sections.push('');
+  }
+
+  // ─── Import Order ───────────────────────────────────────────────────────
+  const importConv = conventions?.imports;
+  const cfgImports = teamConventions.imports;
+
+  const importOrder = cfgImports?.order ?? importConv?.order ?? ['builtin', 'external', 'internal', 'relative'];
+  const groupSeparator = importConv?.groupSeparator.value ?? cfgImports?.groupSeparator ?? true;
+
+  sections.push('## Import Order\n');
+  importOrder.forEach((group, index) => {
+    sections.push(`${index + 1}. ${group}`);
+  });
+  if (groupSeparator) {
+    sections.push('\nSeparate groups with a blank line.');
+  }
+  sections.push('');
+
+  // ─── Source Info ────────────────────────────────────────────────────────
+  if (conventions) {
+    const sources: string[] = [];
+    if (conventions.hasConfigFile) sources.push('config files (.prettierrc, .editorconfig, etc.)');
+    if (conventions.sampledFiles > 0) sources.push(`${conventions.sampledFiles} sampled source files`);
+    if (sources.length > 0) {
+      sections.push(`> Detected from: ${sources.join(' and ')}`);
+      sections.push('');
+    }
   }
 
   const content = [
     GENERATION_HEADER,
     '',
     `---`,
-    `inclusion: ${determineInclusionMode(confidence)}`,
+    `inclusion: ${determineInclusionMode(overallConfidence)}`,
     `---`,
     '',
     '# Coding Standards',
@@ -118,7 +139,7 @@ function generateCodingStandards(
     ...sections,
   ].join('\n');
 
-  return { content, confidence };
+  return { content, confidence: overallConfidence };
 }
 
 /**

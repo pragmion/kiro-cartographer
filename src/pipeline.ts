@@ -12,6 +12,7 @@ import { ApiAnalyzer } from './analyzers/api-analyzer.js';
 import { ErrorHandlingAnalyzer } from './analyzers/error-handling-analyzer.js';
 import { StateAnalyzer } from './analyzers/state-analyzer.js';
 import { BuildAnalyzer } from './analyzers/build-analyzer.js';
+import { ConventionAnalyzer } from './analyzers/convention-analyzer.js';
 
 import { SteeringFileGenerator } from './generators/steering-generator.js';
 import { SkillGenerator } from './generators/skill-generator.js';
@@ -109,7 +110,7 @@ export async function runAnalysis(opts: AnalyzeOptions): Promise<{
   const baseContext = { rootPath, fileTree, focusAreas, config, cache, reportProgress };
 
   await reportProgress('Analyzing architecture', 20, 100);
-  const [patterns, dataModels, apis, errorHandling, stateManagement, buildPipeline] =
+  const [patterns, dataModels, apis, errorHandling, stateManagement, buildPipeline, conventions] =
     await Promise.all([
       new PatternAnalyzer().analyze(baseContext),
       new DataModelAnalyzer().analyze(baseContext),
@@ -117,6 +118,7 @@ export async function runAnalysis(opts: AnalyzeOptions): Promise<{
       new ErrorHandlingAnalyzer().analyze(baseContext),
       new StateAnalyzer().analyze(baseContext),
       new BuildAnalyzer().analyze(baseContext),
+      new ConventionAnalyzer().analyze(baseContext),
     ]);
 
   await reportProgress('Finalizing', 90, 100);
@@ -144,6 +146,7 @@ export async function runAnalysis(opts: AnalyzeOptions): Promise<{
     errorHandling,
     stateManagement,
     buildPipeline,
+    conventions,
     warnings: [
       ...structure.warnings,
       ...configWarnings.map((m) => ({ path: '', message: m, severity: 'warning' as const })),

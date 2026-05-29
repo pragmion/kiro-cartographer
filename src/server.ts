@@ -14,6 +14,7 @@ import { ApiAnalyzer } from './analyzers/api-analyzer.js';
 import { ErrorHandlingAnalyzer } from './analyzers/error-handling-analyzer.js';
 import { StateAnalyzer } from './analyzers/state-analyzer.js';
 import { BuildAnalyzer } from './analyzers/build-analyzer.js';
+import { ConventionAnalyzer } from './analyzers/convention-analyzer.js';
 
 // Generators
 import { SteeringFileGenerator } from './generators/steering-generator.js';
@@ -156,7 +157,7 @@ async function handleAnalyzeCodebase(
 
   // Run remaining analyzers in parallel
   await reportProgress('Analyzing architecture patterns', 20, 100);
-  const [patterns, dataModels, apis, errorHandling, stateManagement, buildPipeline] =
+  const [patterns, dataModels, apis, errorHandling, stateManagement, buildPipeline, conventions] =
     await Promise.all([
       new PatternAnalyzer().analyze(baseContext),
       new DataModelAnalyzer().analyze(baseContext),
@@ -164,6 +165,7 @@ async function handleAnalyzeCodebase(
       new ErrorHandlingAnalyzer().analyze(baseContext),
       new StateAnalyzer().analyze(baseContext),
       new BuildAnalyzer().analyze(baseContext),
+      new ConventionAnalyzer().analyze(baseContext),
     ]);
 
   await reportProgress('Finalizing analysis', 90, 100);
@@ -192,6 +194,7 @@ async function handleAnalyzeCodebase(
     errorHandling,
     stateManagement,
     buildPipeline,
+    conventions,
     warnings: [...structure.warnings, ...configWarnings.map(m => ({ path: '', message: m, severity: 'warning' as const }))],
   };
 

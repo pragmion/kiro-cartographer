@@ -332,6 +332,7 @@ export interface AnalyzeCodebaseOutput {
   errorHandling: ErrorHandlingAnalysis;
   stateManagement: StateManagementAnalysis;
   buildPipeline: BuildPipelineAnalysis;
+  conventions?: ConventionAnalysis;
   warnings: AnalysisWarning[];
 }
 
@@ -415,6 +416,34 @@ export interface ResolvedConfig {
   teamConventions: TeamConventions;
   analysisProfile: AnalysisProfile;
   overriddenFields: string[];
+}
+
+// ─── Convention Analysis ─────────────────────────────────────────────────────
+
+export interface DetectedConvention<T> {
+  value: T;
+  confidence: 'high' | 'medium' | 'low';
+  source: 'detected' | 'config-file' | 'default';
+}
+
+export interface ConventionAnalysis {
+  sampledFiles: number;
+  hasConfigFile: boolean;
+  formatting: {
+    indentation: DetectedConvention<'spaces' | 'tabs'>;
+    indentSize: DetectedConvention<number>;
+    semicolons: DetectedConvention<boolean>;
+    trailingComma: DetectedConvention<boolean>;
+    maxLineLength?: DetectedConvention<number>;
+  };
+  naming: {
+    files: DetectedConvention<'kebab-case' | 'camelCase' | 'PascalCase' | 'snake_case'>;
+  };
+  commentStyle: DetectedConvention<'jsdoc' | 'inline' | 'minimal' | 'none'>;
+  imports: {
+    groupSeparator: DetectedConvention<boolean>;
+    order: string[];
+  };
 }
 
 // ─── State Cache ────────────────────────────────────────────────────────────
