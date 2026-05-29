@@ -292,12 +292,15 @@ export class ConventionAnalyzer implements Analyzer<ConventionAnalysis> {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
 
-        // Count function/method declarations
-        if (
-          line.match(/^(export\s+)?(async\s+)?function\s/) ||
-          line.match(/^(public|private|protected|static|async|readonly)\s/) ||
-          line.match(/^\w+\s*\(.*\)\s*[:{]/)
-        ) {
+        // Count exported/public function/method declarations (these should be documented)
+        const isPublicDeclaration =
+          line.match(/^export\s+(async\s+)?function\s/) ||
+          line.match(/^export\s+(class|interface|type|enum)\s/) ||
+          line.match(/^\s*(public|protected)\s+(async\s+)?\w+\s*\(/) ||
+          line.match(/^\s+(async\s+)?\w+\s*\([^)]*\)\s*[:{]/) ||
+          line.match(/^(async\s+)?function\s/);
+
+        if (isPublicDeclaration) {
           totalFunctions++;
 
           // Check if preceded by JSDoc
@@ -305,8 +308,9 @@ export class ConventionAnalyzer implements Analyzer<ConventionAnalysis> {
           while (j >= 0 && lines[j].trim() === '') j--;
           if (j >= 0 && lines[j].trim().endsWith('*/')) {
             // Walk back to find /**
-            while (j >= 0 && !lines[j].trim().startsWith('/**')) j--;
-            if (j >= 0) jsdocCount++;
+            let k = j;
+            while (k >= 0 && !lines[k].trim().startsWith('/**')) k--;
+            if (k >= 0) jsdocCount++;
           } else if (j >= 0 && lines[j].trim().startsWith('//')) {
             inlineCount++;
           }
@@ -323,12 +327,12 @@ export class ConventionAnalyzer implements Analyzer<ConventionAnalysis> {
     const commentedRatio = (jsdocCount + inlineCount) / totalFunctions;
 
     let value: 'jsdoc' | 'inline' | 'minimal' | 'none';
-    if (jsdocRatio > 0.5) value = 'jsdoc';
+    if (jsdocRatio > 0.4) value = 'jsdoc';
     else if (inlineRatio > 0.3) value = 'inline';
     else if (commentedRatio < 0.1) value = 'none';
     else value = 'minimal';
 
-    const confidence = jsdocRatio > 0.7 || commentedRatio < 0.05 ? 'high' : 'medium';
+    const confidence = jsdocRatio > 0.5 || commentedRatio < 0.05 ? 'high' : 'medium';
 
     return { value, confidence, source: 'detected' };
   }

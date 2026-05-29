@@ -202,6 +202,25 @@ async function handleAnalyzeCodebase(
   cache.updateTimestamp();
   await cache.save(rootPath);
 
+  // Auto-save analysis result for generate_artifacts
+  const analysisOutputPath = join(rootPath, '.cartographer', 'last-analysis.json');
+  try {
+    await safeWriteFile(analysisOutputPath, JSON.stringify(result, null, 2));
+  } catch {
+    // Best-effort — don't fail the analysis if we can't save
+  }
+
+  // Auto-generate artifacts from the fresh analysis
+  try {
+    await handleGenerateArtifacts({
+      rootPath,
+      analysisResultPath: analysisOutputPath,
+      conflictStrategy: 'skip',
+    });
+  } catch {
+    // Best-effort — don't fail the analysis if generation fails
+  }
+
   // Load learning state and produce summary (best-effort)
   let learningSummary: Awaited<ReturnType<CartographerLearning['getLearningSummary']>> | null = null;
   try {
