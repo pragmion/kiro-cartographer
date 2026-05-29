@@ -1,4 +1,4 @@
-# 🗺️ Kiro Cartographer
+# <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/compass.svg" width="28" height="28" alt="compass"> Kiro Cartographer
 
 > A **Kiro Power** that maps any codebase and generates steering files, skills, and architecture docs — so Kiro works like a senior teammate from the first prompt.
 
