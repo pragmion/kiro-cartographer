@@ -3,8 +3,9 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 
-# Internal working files (specs, hooks, settings)
-.kiro/
+# Internal working files (specs, settings) — but keep hooks (shipped with power)
+.kiro/*
+!.kiro/hooks/
 
 # Cartographer state files (per-project, not source code)
 .cartographer/

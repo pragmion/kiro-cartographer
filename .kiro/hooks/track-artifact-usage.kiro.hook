@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "enabled": true,
+  "name": "Track Artifact Usage",
+  "description": "When a steering file or skill is read, records the access via record_feedback so usage statistics can identify high-value and unused artifacts.",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": ["read"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Check if the file that was just read is a Kiro artifact (path contains .kiro/steering/ or .kiro/skills/). If yes, call the kiro-cartographer power's record_feedback tool with type 'artifact-usage' and the artifactPath (relative to project root, e.g. '.kiro/steering/coding-standards.md'). If the file is not a Kiro artifact, do nothing."
+  }
+}

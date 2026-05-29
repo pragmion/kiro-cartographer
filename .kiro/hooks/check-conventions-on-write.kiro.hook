@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "enabled": true,
+  "name": "Convention Check on Write",
+  "description": "After a write operation, checks if the written code follows the project's steering conventions and records violations via record_feedback.",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": ["write"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the code that was just written. Compare it against the coding standards in .kiro/steering/coding-standards.md (naming conventions, formatting, import order). If you find a violation, call the kiro-cartographer power's record_feedback tool with type 'convention-violation', the relevant steeringFile, rule, and an example of the violation. If the code is compliant, do nothing."
+  }
+}
